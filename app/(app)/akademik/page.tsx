@@ -69,13 +69,24 @@ async function MapelSection() {
   );
 }
 
-async function JadwalSection({ level, error }: { level?: string; error?: string }) {
+async function JadwalSection({ level, kelas, error }: { level?: string; kelas?: string; error?: string }) {
   const user = await requirePermission("course.manage");
   const activeLevel = Object.values(EducationLevel).includes(level as EducationLevel)
     ? (level as EducationLevel)
     : EducationLevel.SMP;
   const { days, courses } = await getScheduleBoard(user, activeLevel);
-  const filteredCourses = courses.filter((c) => c.level === activeLevel);
+  const levelCourses = courses.filter((course) => course.level === activeLevel);
+  const classNames = [...new Set(levelCourses.map((course) => course.classRoom?.name).filter((name): name is string => Boolean(name)))].sort((a, b) =>
+    a.localeCompare(b, "id", { numeric: true }),
+  );
+  const activeClass = classNames.includes(kelas ?? "") ? kelas : "ALL";
+  const filteredCourses = levelCourses.filter((c) => activeClass === "ALL" || c.classRoom?.name === activeClass);
+  const filteredDays = days.map((day) => ({
+    ...day,
+    slots: day.slots.filter((slot) =>
+      activeClass === "ALL" || levelCourses.find((course) => course.id === slot.courseId)?.classRoom?.name === activeClass,
+    ),
+  }));
   const coursesByClass = new Map<string, typeof filteredCourses>();
   filteredCourses.forEach((course) => {
     const className = course.classRoom?.name ?? "Belum ada kelas";
@@ -120,6 +131,30 @@ async function JadwalSection({ level, error }: { level?: string; error?: string 
           );
         })}
       </div>
+
+      {classNames.length > 0 ? (
+        <div className="flex gap-2 overflow-x-auto border-b border-line pb-px">
+          <Link
+            href={`/akademik?tab=jadwal&level=${activeLevel}`}
+            className={`whitespace-nowrap border-b-2 px-4 py-2 text-sm font-semibold transition ${
+              activeClass === "ALL" ? "border-primary text-primary" : "border-transparent text-ink-3 hover:text-ink-2"
+            }`}
+          >
+            Semua kelas
+          </Link>
+          {classNames.map((name) => (
+            <Link
+              key={name}
+              href={`/akademik?tab=jadwal&level=${activeLevel}&kelas=${encodeURIComponent(name)}`}
+              className={`whitespace-nowrap border-b-2 px-4 py-2 text-sm font-semibold transition ${
+                activeClass === name ? "border-primary text-primary" : "border-transparent text-ink-3 hover:text-ink-2"
+              }`}
+            >
+              {name}
+            </Link>
+          ))}
+        </div>
+      ) : null}
 
       <Card pad={18}>
         <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-ink-3">Tambah Slot Jadwal</h3>
@@ -176,7 +211,7 @@ async function JadwalSection({ level, error }: { level?: string; error?: string 
         </form>
       </Card>
 
-      <DayGrid days={days} canEdit={true} />
+      <DayGrid days={filteredDays} canEdit={true} />
     </div>
   );
 }
@@ -219,9 +254,9 @@ async function AdministrasiSection() {
 export default async function AkademikPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; semester?: string; tahun?: string; level?: string; error?: string }>;
+  searchParams: Promise<{ tab?: string; semester?: string; tahun?: string; level?: string; kelas?: string; error?: string }>;
 }) {
-  const [{ tab, semester, tahun, level, error }, user] = await Promise.all([
+  const [{ tab, semester, tahun, level, kelas, error }, user] = await Promise.all([
     searchParams,
     requireAnyPermission([
       "class.manage",
@@ -262,7 +297,7 @@ export default async function AkademikPage({
 
       {activeTab === "kelas" ? <KelasSection /> : null}
       {activeTab === "mapel" ? <MapelSection /> : null}
-      {activeTab === "jadwal" ? <JadwalSection level={level} error={error} /> : null}
+      {activeTab === "jadwal" ? <JadwalSection level={level} kelas={kelas} error={error} /> : null}
       {activeTab === "peserta" ? <PesertaSection /> : null}
       {activeTab === "kelompok" ? <KelompokSection /> : null}
       {activeTab === "bobot" ? <BobotSection semester={semester} academicYear={tahun} /> : null}
