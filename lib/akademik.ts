@@ -154,7 +154,7 @@ export const getGradeWeightBoard = cache(async (semester: Semester, academicYear
       select: {
         id: true,
         title: true,
-        classRoom: { select: { name: true } },
+        classRoom: { select: { id: true, name: true, academicYear: true } },
         gradeItems: {
           where: { semester, academicYear },
           orderBy: { title: "asc" },
@@ -181,7 +181,9 @@ export const getGradeWeightBoard = cache(async (semester: Semester, academicYear
     courses: courses.map((c) => ({
       id: c.id,
       title: c.title,
+      classRoomId: c.classRoom?.id ?? null,
       className: c.classRoom?.name ?? null,
+      classAcademicYear: c.classRoom?.academicYear ?? null,
       items: c.gradeItems.map((i) => ({
         id: i.id,
         title: i.title,
