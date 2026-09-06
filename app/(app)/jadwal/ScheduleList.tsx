@@ -12,6 +12,8 @@ export type Slot = {
   room: string;
   courseId: string;
   courseTitle: string;
+  classRoomId: string | null;
+  className: string | null;
   teacher: string;
 };
 

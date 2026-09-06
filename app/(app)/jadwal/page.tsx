@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireAnyPermission, userCan } from "@/lib/auth";
 import { EducationLevel } from "@/generated/prisma/client";
 import { getCourseOverview, getParentScheduleBoard, getScheduleBoard } from "@/lib/lms";
-import { Badge, Card } from "@/components/ui";
+import { Badge, Card, inputClasses } from "@/components/ui";
 import { DataExportButtons } from "@/components/DataExportButtons";
 import { DayGrid, type Day } from "./ScheduleList";
 import { CourseCatalogue } from "./CourseCatalogue";
@@ -31,9 +31,9 @@ function scheduleRows(days: Day[]) {
 export default async function JadwalPage({
   searchParams,
 }: {
-  searchParams: Promise<{ level?: string; anak?: string }>;
+  searchParams: Promise<{ level?: string; kelas?: string; anak?: string }>;
 }) {
-  const [{ level, anak }, user] = await Promise.all([
+  const [{ level, kelas, anak }, user] = await Promise.all([
     searchParams,
     requireAnyPermission(["course.view", "schedule.view.own"]),
   ]);
@@ -121,7 +121,12 @@ export default async function JadwalPage({
   const activeLevel = Object.values(EducationLevel).includes(level as EducationLevel)
     ? (level as EducationLevel)
     : EducationLevel.SMP;
-  const [{ days }, courseOverview] = await Promise.all([getScheduleBoard(user, activeLevel), getCourseOverview(user)]);
+  const selectedClassRoomId = kelas && kelas !== "ALL" ? kelas : undefined;
+  const [{ days }, courseOverview] = await Promise.all([getScheduleBoard(user, activeLevel, selectedClassRoomId), getCourseOverview(user)]);
+
+  const classOptions = courseOverview
+    .filter((course) => course.level === activeLevel && course.classRoomId && course.className)
+    .reduce((options, course) => options.set(course.classRoomId as string, course.className as string), new Map<string, string>());
 
   const unassignedCourses = canManageAcademics ? courseOverview.filter((course) => !course.assigned).length : 0;
 
@@ -136,21 +141,34 @@ export default async function JadwalPage({
         </p>
       </div>
 
-      <div className="flex gap-2 border-b border-line pb-px overflow-x-auto">
-        {LEVELS.map((lvl) => {
-          const active = lvl === activeLevel;
-          return (
-            <Link
-              key={lvl}
-              href={`/jadwal?level=${lvl}`}
-              className={`whitespace-nowrap border-b-2 px-4 py-2 text-sm font-semibold transition ${
-                active ? "border-primary text-primary" : "border-transparent text-ink-3 hover:text-ink-2"
-              }`}
-            >
-              {LEVEL_FULL[lvl] === LEVEL_LABEL[lvl] ? LEVEL_LABEL[lvl] : `${LEVEL_FULL[lvl]} (${LEVEL_LABEL[lvl]})`}
-            </Link>
-          );
-        })}
+      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-line pb-3">
+        <div className="flex gap-2 overflow-x-auto">
+          {LEVELS.map((lvl) => {
+            const active = lvl === activeLevel;
+            return (
+              <Link
+                key={lvl}
+                href={`/jadwal?level=${lvl}`}
+                className={`whitespace-nowrap border-b-2 px-4 py-2 text-sm font-semibold transition ${
+                  active ? "border-primary text-primary" : "border-transparent text-ink-3 hover:text-ink-2"
+                }`}
+              >
+                {LEVEL_FULL[lvl] === LEVEL_LABEL[lvl] ? LEVEL_LABEL[lvl] : `${LEVEL_FULL[lvl]} (${LEVEL_LABEL[lvl]})`}
+              </Link>
+            );
+          })}
+        </div>
+        <form className="flex items-center gap-2" method="get">
+          <input type="hidden" name="level" value={activeLevel} />
+          <label htmlFor="schedule-class" className="sr-only">Filter kelas</label>
+          <select id="schedule-class" name="kelas" defaultValue={kelas ?? "ALL"} className={`${inputClasses} min-w-44`}>
+            <option value="ALL">Semua kelas {activeLevel}</option>
+            {[...classOptions.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([id, name]) => (
+              <option key={id} value={id}>{name}</option>
+            ))}
+          </select>
+          <button type="submit" className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white">Terapkan</button>
+        </form>
       </div>
 
       <div className="flex justify-end">
