@@ -161,8 +161,7 @@ export default async function JadwalPage({
         <form className="flex items-center gap-2" method="get">
           <input type="hidden" name="level" value={activeLevel} />
           <label htmlFor="schedule-class" className="sr-only">Filter kelas</label>
-          <select id="schedule-class" name="kelas" defaultValue={kelas ?? "ALL"} className={`${inputClasses} min-w-44`}>
-            <option value="ALL">Semua kelas {activeLevel}</option>
+          <select id="schedule-class" name="kelas" defaultValue={kelas ?? ""} className={`${inputClasses} min-w-44`}>
             {[...classOptions.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([id, name]) => (
               <option key={id} value={id}>{name}</option>
             ))}
