@@ -892,11 +892,18 @@ export const getChildDetail = cache(async (parentId: string, childId: string) =>
 const DAY_NAMES = ["Ahad", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"] as const;
 
 /** Papan jadwal per hari (dayOfWeek 0 = Ahad, mengikuti Date.getDay()). */
-export const getScheduleBoard = cache(async (user: AuthUser, level?: EducationLevel) => {
+export const getScheduleBoard = cache(async (user: AuthUser, level?: EducationLevel, classRoomId?: string) => {
   const teacherScope = isTeachingStaff(user) ? { teacherId: user.id } : {};
   const [slots, courses] = await Promise.all([
     prisma.scheduleSlot.findMany({
-      where: { course: { deletedAt: null, ...teacherScope, ...(level ? { level } : {}) } },
+      where: {
+        course: {
+          deletedAt: null,
+          ...teacherScope,
+          ...(level ? { level } : {}),
+          ...(classRoomId ? { classRoomId } : {}),
+        },
+      },
       orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
       select: {
         id: true,
@@ -904,7 +911,15 @@ export const getScheduleBoard = cache(async (user: AuthUser, level?: EducationLe
         startTime: true,
         endTime: true,
         room: true,
-        course: { select: { id: true, title: true, level: true, teacher: { select: { name: true } } } },
+        course: {
+          select: {
+            id: true,
+            title: true,
+            level: true,
+            classRoom: { select: { id: true, name: true } },
+            teacher: { select: { name: true } },
+          },
+        },
       },
     }),
     prisma.course.findMany({
@@ -927,6 +942,8 @@ export const getScheduleBoard = cache(async (user: AuthUser, level?: EducationLe
         courseId: s.course.id,
         courseTitle: s.course.title,
         level: s.course.level,
+        classRoomId: s.course.classRoom?.id ?? null,
+        className: s.course.classRoom?.name ?? null,
         teacher: s.course.teacher?.name ?? "Belum ditugaskan",
       })),
   }));
@@ -970,6 +987,8 @@ export const getParentScheduleBoard = cache(async (parentId: string) => {
         room: s.room,
         courseId: e.course.id,
         courseTitle: e.course.title,
+        classRoomId: null,
+        className: null,
         teacher: e.course.teacher?.name ?? "Belum ditugaskan",
       })),
     );
