@@ -76,6 +76,14 @@ async function JadwalSection({ level, error }: { level?: string; error?: string 
     : EducationLevel.SMP;
   const { days, courses } = await getScheduleBoard(user, activeLevel);
   const filteredCourses = courses.filter((c) => c.level === activeLevel);
+  const coursesByClass = new Map<string, typeof filteredCourses>();
+  filteredCourses.forEach((course) => {
+    const className = course.classRoom?.name ?? "Belum ada kelas";
+    const classCourses = coursesByClass.get(className) ?? [];
+    classCourses.push(course);
+    coursesByClass.set(className, classCourses);
+  });
+  const groupedCourses = [...coursesByClass.entries()].sort(([classA], [classB]) => classA.localeCompare(classB));
   const errorMessage =
     error === "conflict"
       ? "Jadwal bertabrakan dengan penggunaan ruangan atau jadwal pengajar pada rentang waktu tersebut."
@@ -120,10 +128,14 @@ async function JadwalSection({ level, error }: { level?: string; error?: string 
           <Field label="Mata Pelajaran">
             <select name="courseId" required className={inputClasses}>
               <option value="">-- Pilih Mapel --</option>
-              {filteredCourses.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.title}{c.classRoom?.name ? ` · ${c.classRoom.name}` : ""}
-                </option>
+              {groupedCourses.map(([className, classCourses]) => (
+                <optgroup key={className} label={className}>
+                  {classCourses.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.title}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </Field>
