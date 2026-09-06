@@ -134,14 +134,6 @@ async function JadwalSection({ level, kelas, error }: { level?: string; kelas?: 
 
       {classNames.length > 0 ? (
         <div className="flex gap-2 overflow-x-auto border-b border-line pb-px">
-          <Link
-            href={`/akademik?tab=jadwal&level=${activeLevel}`}
-            className={`whitespace-nowrap border-b-2 px-4 py-2 text-sm font-semibold transition ${
-              activeClass === "ALL" ? "border-primary text-primary" : "border-transparent text-ink-3 hover:text-ink-2"
-            }`}
-          >
-            Semua kelas
-          </Link>
           {classNames.map((name) => (
             <Link
               key={name}
