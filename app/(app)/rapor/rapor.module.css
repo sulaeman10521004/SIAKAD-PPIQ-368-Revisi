@@ -1,0 +1,106 @@
+/* Lembar rapor dibagikan dalam bentuk cetak, jadi tampilan layar disederhanakan
+   saat dicetak: chrome aplikasi disembunyikan, warna dijadikan hitam-putih. */
+
+.sheet {
+  background: var(--surface);
+}
+
+.letterhead {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr) 76px;
+  align-items: center;
+  gap: 18px;
+  border-bottom: 3px double var(--text);
+  padding-bottom: 14px;
+}
+
+.letterheadSpacer {
+  display: block;
+}
+
+@media (max-width: 520px) {
+  .letterhead {
+    grid-template-columns: 58px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .letterheadSpacer {
+    display: none;
+  }
+}
+
+@media print {
+  /* Sembunyikan kerangka aplikasi (sidebar + topbar) dan tombol aksi. */
+  :global(aside),
+  :global(header),
+  .noPrint {
+    display: none !important;
+  }
+
+  :global(html),
+  :global(body) {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  :global(.app-shell) {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  :global(.app-content) {
+    display: block !important;
+    overflow: visible !important;
+  }
+
+  :global(main) {
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  .sheet {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    background: #fff !important;
+    color: #111 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .letterhead {
+    grid-template-columns: 76px minmax(0, 1fr) 76px !important;
+  }
+
+  .letterheadSpacer {
+    display: block !important;
+  }
+
+  .sheet table {
+    page-break-inside: auto;
+  }
+
+  .sheet tr {
+    page-break-inside: avoid;
+  }
+
+  .sheet th,
+  .sheet td {
+    border-color: #999 !important;
+  }
+
+  .signature {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    min-height: 130px;
+  }
+
+  @page {
+    margin: 14mm;
+  }
+}
