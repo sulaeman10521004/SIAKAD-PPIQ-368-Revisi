@@ -12,7 +12,9 @@ type Item = { id: string; title: string; maxScore: number; weight: number; dueAt
 type CourseWeights = {
   id: string;
   title: string;
+  classRoomId: string | null;
   className: string | null;
+  classAcademicYear: string | null;
   items: Item[];
   weightSum: number;
   zeroWeightCount: number;
@@ -206,9 +208,27 @@ export function BobotManager({
   const router = useRouter();
   const { run, toast } = useActionRunner();
   const [q, setQ] = useState("");
+  const [classFilter, setClassFilter] = useState(courses.find((course) => course.classRoomId)?.classRoomId ?? "");
 
-  const list = useMemo(() => courses.filter((c) => c.title.toLowerCase().includes(q.toLowerCase())), [courses, q]);
-  const withItems = courses.filter((c) => c.items.length > 0);
+  const classOptions = useMemo(
+    () =>
+      [...new Map(
+        courses
+          .filter((course) => course.classRoomId && course.className)
+          .map((course) => [course.classRoomId, { id: course.classRoomId as string, name: course.className as string, academicYear: course.classAcademicYear }]),
+      ).values()].sort((a, b) => a.name.localeCompare(b.name, "id", { numeric: true })),
+    [courses],
+  );
+  const list = useMemo(
+    () =>
+      courses.filter(
+        (c) =>
+          (!classFilter || c.classRoomId === classFilter) &&
+          c.title.toLowerCase().includes(q.toLowerCase()),
+      ),
+    [courses, q, classFilter],
+  );
+  const withItems = list.filter((c) => c.items.length > 0);
   const unbalanced = withItems.filter((c) => c.weightSum !== 100);
   const withZeroWeight = withItems.filter((c) => c.zeroWeightCount > 0);
 
@@ -232,6 +252,18 @@ export function BobotManager({
             className="w-full bg-transparent py-2.5 text-[13.5px] outline-none"
           />
         </div>
+        <select
+          value={classFilter}
+          aria-label="Pilih kelas"
+          onChange={(e) => setClassFilter(e.target.value)}
+          className={`${inputClasses} sm:max-w-[280px]`}
+        >
+          {classOptions.map((classOption) => (
+            <option key={classOption.id} value={classOption.id}>
+              {classOption.name}{classOption.academicYear ? ` · ${classOption.academicYear}` : ""}
+            </option>
+          ))}
+        </select>
         <select
           value={periodKey(period)}
           aria-label="Periode bobot"
