@@ -1,0 +1,3 @@
+ALTER TYPE "AdmissionDocumentKind" ADD VALUE IF NOT EXISTS 'PAYMENT_PROOF';
+
+ALTER TABLE "Admission" ADD COLUMN "paymentProofUrl" TEXT;
