@@ -201,7 +201,7 @@ export function MapelManager({
         (c) =>
           (levelFilter === "ALL" || c.level === levelFilter) &&
           (groupFilter === "ALL" || c.assessmentGroupId === groupFilter) &&
-          c.title.toLowerCase().includes(q.toLowerCase()),
+          (!q.trim() || c.title.toLowerCase().includes(q.trim().toLowerCase()) || c.teacherName?.toLowerCase().includes(q.trim().toLowerCase())),
       ),
     [courses, q, levelFilter, groupFilter],
   );
@@ -261,9 +261,7 @@ export function MapelManager({
         </div>
         <select
           value={levelFilter}
-          onChange={(e) => {
-            setLevelFilter(e.target.value as "ALL" | EducationLevel);
-          }}
+          onChange={(e) => setLevelFilter(e.target.value as "ALL" | EducationLevel)}
           aria-label="Filter jenjang"
           className={inputClasses}
         >
@@ -274,11 +272,11 @@ export function MapelManager({
             </option>
           ))}
         </select>
-        <select value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)} className={`${inputClasses} sm:max-w-[260px]`}>
+        <select value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)} aria-label="Filter kelompok penilaian" className={inputClasses}>
           <option value="ALL">Semua kelompok penilaian</option>
-          {assessmentGroups.map((g) => (
-            <option key={g.id} value={g.id}>
-              {g.name}
+          {assessmentGroups.map((group) => (
+            <option key={group.id} value={group.id}>
+              {group.name}
             </option>
           ))}
         </select>
