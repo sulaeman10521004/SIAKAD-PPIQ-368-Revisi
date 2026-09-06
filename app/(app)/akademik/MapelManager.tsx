@@ -187,6 +187,7 @@ export function MapelManager({
 }) {
   const { run, toast } = useActionRunner();
   const [q, setQ] = useState("");
+  const [levelFilter, setLevelFilter] = useState<"ALL" | EducationLevel>("ALL");
   const [groupFilter, setGroupFilter] = useState("ALL");
   const [addOpen, setAddOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -198,10 +199,11 @@ export function MapelManager({
     () =>
       courses.filter(
         (c) =>
+          (levelFilter === "ALL" || c.level === levelFilter) &&
           (groupFilter === "ALL" || c.assessmentGroupId === groupFilter) &&
           c.title.toLowerCase().includes(q.toLowerCase()),
       ),
-    [courses, q, groupFilter],
+    [courses, q, levelFilter, groupFilter],
   );
 
   function startEdit(c: Course) {
@@ -229,7 +231,7 @@ export function MapelManager({
         <div>
           <h2 className="text-[19px] font-bold tracking-tight">Mapel & Pengampu</h2>
           <p className="mt-0.5 text-[13.5px] text-ink-3">
-            {courses.length} mata pelajaran · atur kelas, kelompok penilaian, pengampu, dan nilai maksimal rapor.
+            Menampilkan {list.length} dari {courses.length} mata pelajaran · atur kelas, kelompok penilaian, pengampu, dan nilai maksimal rapor.
           </p>
         </div>
         <Button variant="primary" icon={<Icons.plus size={17} />} onClick={() => setAddOpen(true)}>
@@ -252,11 +254,26 @@ export function MapelManager({
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            aria-label="Cari mata pelajaran"
-            placeholder="Cari mata pelajaran…"
+            aria-label="Cari mata pelajaran atau pengampu"
+            placeholder="Cari mapel atau pengampu…"
             className="w-full bg-transparent py-2.5 text-[13.5px] outline-none"
           />
         </div>
+        <select
+          value={levelFilter}
+          onChange={(e) => {
+            setLevelFilter(e.target.value as "ALL" | EducationLevel);
+          }}
+          aria-label="Filter jenjang"
+          className={inputClasses}
+        >
+          <option value="ALL">Semua jenjang</option>
+          {(["SD", "SMP", "SMA"] as EducationLevel[]).map((level) => (
+            <option key={level} value={level}>
+              {level}
+            </option>
+          ))}
+        </select>
         <select value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)} className={`${inputClasses} sm:max-w-[260px]`}>
           <option value="ALL">Semua kelompok penilaian</option>
           {assessmentGroups.map((g) => (
